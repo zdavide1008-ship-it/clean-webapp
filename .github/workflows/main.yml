@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK Release
 
 on:
   workflow_dispatch:
@@ -18,22 +18,27 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Grant permission
-        run: chmod +x CleanWebApp_oneclick/build.sh
+      - name: Debug project tree
+        run: ls -R
 
       - name: Build APK
-        working-directory: CleanWebApp_oneclick
         run: |
+          chmod +x clean-webapp/CleanWebApp_oneclick/build.sh
+          cd clean-webapp/CleanWebApp_oneclick
           ./build.sh
 
-      - name: Find APK
+      - name: Locate APK
+        id: apk
         run: |
-          find . -name "*.apk" > apk.txt
-          cat apk.txt
+          APK_PATH=$(find . -name "*.apk" | head -n 1)
+          echo "APK_PATH=$APK_PATH"
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: app-debug-apk
-          path: |
-            **/*.apk
+          tag_name: v1.0.${{ github.run_number }}
+          name: APK Build ${{ github.run_number }}
+          files: ${{ steps.apk.outputs.apk_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
