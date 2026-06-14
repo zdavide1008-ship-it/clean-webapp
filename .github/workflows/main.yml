@@ -18,27 +18,29 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Debug project tree
-        run: ls -R
+      # ✅ 关键：自动安装 Gradle（因为你项目没有 gradlew）
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
 
+      # 🔥 编译 APK（按你项目结构）
       - name: Build APK
-        run: |
-          chmod +x clean-webapp/CleanWebApp_oneclick/build.sh
-          cd clean-webapp/CleanWebApp_oneclick
-          ./build.sh
+        run: gradle assembleDebug
+        working-directory: CleanWebApp_oneclick
 
+      # 🔍 找 APK
       - name: Locate APK
-        id: apk
-        run: |
-          APK_PATH=$(find . -name "*.apk" | head -n 1)
-          echo "APK_PATH=$APK_PATH"
-          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+        run: find . -name "*.apk"
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      # 📦 上传构建产物（Artifacts）
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: APK Build ${{ github.run_number }}
-          files: ${{ steps.apk.outputs.apk_path }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: app-debug-apk
+          path: CleanWebApp_oneclick/**/build/outputs/apk/**/*.apk
+
+      # 🚀 生成 Release（重点：一键下载）
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: CleanWebApp_oneclick/**/build/outputs/apk/**/*.apk
