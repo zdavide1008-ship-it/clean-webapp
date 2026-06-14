@@ -19,6 +19,7 @@ jobs:
           java-version: 17
 
       - name: Build APK
+        working-directory: CleanWebApp_oneclick
         run: |
-          chmod +x ./gradlew
+          chmod +x gradlew
           ./gradlew assembleDebug
